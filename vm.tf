@@ -2,42 +2,48 @@ resource "aws_eip" "instance_ip" {
   instance = aws_instance.ec2_instance.id
 }
 
-resource "aws_instance" "ec2_instance" {
-  ami           = var.instance_ami_id
-  instance_type = var.machine_type
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
+
   tags = {
-    Name = var.instance_name_value
-  }
-
-  key_name      = var.key_name
-  subnet_id     = var.subnet_id
-
-  vpc_security_group_ids = var.security_groups
-
-  root_block_device {
-    volume_size = var.boot_disk_size
+    Name = "test-vpc"
   }
 }
 
-resource "aws_security_group" "ec2_security_group" {
-  name        = "ec2-security-group"
-  description = "Security group for EC2 instance"
-  vpc_id      = var.vpc_id
+resource "aws_internet_gateway" "example" {
+  vpc_id = aws_vpc.main.id
 
-  tags = var.security_group_tags
+  tags = {
+    Name = "test-internet-gateway"
+  }
+}
+
+resource "aws_subnet" "main" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"  # Update with your desired availability zone
+
+  tags = {
+    Name = "test-subnet"
+  }
+}
+
+resource "aws_security_group" "instance_sg" {
+  name        = "instance-security-group"
+  description = "Security group for EC2 instance"
+  vpc_id      = aws_vpc.main.id
+
+  provisioner "local-exec" {
+    command = "curl ifconfig.me > ip.txt"
+  }
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.my_ip]
   }
 
   egress {
@@ -46,24 +52,23 @@ resource "aws_security_group" "ec2_security_group" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-/*
-# Define an SSM association for the EC2 instance (example - you can modify as needed)(If tasks like patch management are to be performed we can use these variables.)
-resource "aws_ssm_association" "ec2_ssm_association" {
-  name = "AWS-ApplyPatchBaseline"
-
-  targets {
-    key    = "InstanceIds"
-    values = [aws_instance.ec2_instance.id]
+  tags = {
+    Name = "test-security-group"
   }
-    schedule_expression = "cron(0 0 ? * SUN *)"
 }
 
-# Define the EC2 instance lifecycle configuration
-resource "aws_instance" "ec2_instance_lifecycle" {
-  ami                     = var.instance_ami_id
-  instance_type           = var.machine_type
-  disable_api_termination = false
+resource "aws_instance" "ec2_instance" {
+  ami                    = "ami-06aa3f7caf3a30282"  # Update with your desired AMI ID
+  instance_type          = "t2.micro"  # Update with your desired instance type
+  subnet_id              = aws_subnet.main.id
+  key_name               = "Catalog"  # Update with your key pair name
+  vpc_security_group_ids = [aws_security_group.instance_sg.id]
+  tags = {
+    Name = var.instance_name_value
+  }
+
+    root_block_device {
+    volume_size = var.boot_disk_size
+  }
 }
-*/

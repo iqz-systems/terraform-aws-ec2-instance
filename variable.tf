@@ -1,6 +1,7 @@
 variable "project_region" {
   type        = string
   description = "The region where the resources will be created."
+  default = "us-east-1"
 }
 
 variable "instance_name_value" {
@@ -11,7 +12,7 @@ variable "instance_name_value" {
 variable "key_name" {
   type        = string
   description = "The name of the EC2 key pair to use for SSH access."
-  default     = ""
+  default     = "Catalog"
 }
 
 variable "machine_type" {
@@ -29,17 +30,19 @@ variable "boot_disk_size" {
 variable "security_groups" {
   type        = list(string)
   description = "A list of security group IDs to associate with the EC2 instance."
-  default     = []
+  default     = null
 }
 
 variable "vpc_id" {
   type        = string
   description = "The VPC ID to associate this instance with."
+  default     = null
 }
 
 variable "instance_ami_id" {
   type        = string
   description = "The ID of the AWS AMI to use for the instance."
+  default = "ami-06aa3f7caf3a30282"
 }
 
 variable "security_group_tags" {
@@ -51,6 +54,12 @@ variable "security_group_tags" {
 variable "subnet_id" {
   type        = string
   description = "The subnet to associate this instance with."
+  default     = null
+}
+
+variable "my_ip" {
+  type        = string
+  description = "Your IP Address."
 }
 
 variable "network_tags" {
