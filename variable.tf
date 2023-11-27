@@ -9,6 +9,12 @@ variable "instance_name_value" {
   description = "The name of the instance to be created."
 }
 
+variable "eip_name_value" {
+  type        = string
+  description = "The name of the instance to be created."
+  default = "cloud-ip"
+}
+
 variable "key_name" {
   type        = string
   description = "The name of the EC2 key pair to use for SSH access."
@@ -60,7 +66,6 @@ variable "security_group_tags" {
   description = "Tags to be applied to the security group."
   default     = {}
 }
-
 
 variable "subnet_id" {
   type        = string
