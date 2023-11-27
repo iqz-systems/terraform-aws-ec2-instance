@@ -2,48 +2,77 @@ resource "aws_eip" "instance_ip" {
   instance = aws_instance.ec2_instance.id
 }
 
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_support = true
-  enable_dns_hostnames = true
-
+resource "aws_instance" "ec2_instance" {
+  ami           = var.instance_ami_id
+  instance_type = var.machine_type
   tags = {
-    Name = "test-vpc"
+    Name = var.instance_name_value
   }
+
+  key_name      = var.key_name
+  subnet_id     = var.subnet_id
+  availability_zone = var.availability_zone
+
+  vpc_security_group_ids = var.security_groups
+
+  root_block_device {
+    volume_size = var.boot_disk_size
+  }
+
+  metadata_options {
+    http_tokens            = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
+
+  user_data = <<-EOF
+    #cloud-config
+    enable_oslogin: true
+    EOF
+
 }
 
-resource "aws_internet_gateway" "example" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "test-internet-gateway"
-  }
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "ec2_instance_profile"
+  role = aws_iam_role.ec2_instance_role.name
 }
 
-resource "aws_subnet" "main" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1a"  # Update with your desired availability zone
+resource "aws_iam_role" "ec2_instance_role" {
+  name = "ec2_instance_role"
 
-  tags = {
-    Name = "test-subnet"
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
 }
 
-resource "aws_security_group" "instance_sg" {
-  name        = "instance-security-group"
+resource "aws_security_group" "ec2_security_group" {
   description = "Security group for EC2 instance"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
-  provisioner "local-exec" {
-    command = "curl ifconfig.me > ip.txt"
-  }
+  tags = var.security_group_tags
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.my_ip]
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -52,23 +81,5 @@ resource "aws_security_group" "instance_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  tags = {
-    Name = "test-security-group"
-  }
 }
 
-resource "aws_instance" "ec2_instance" {
-  ami                    = "ami-06aa3f7caf3a30282"  # Update with your desired AMI ID
-  instance_type          = "t2.micro"  # Update with your desired instance type
-  subnet_id              = aws_subnet.main.id
-  key_name               = "Catalog"  # Update with your key pair name
-  vpc_security_group_ids = [aws_security_group.instance_sg.id]
-  tags = {
-    Name = var.instance_name_value
-  }
-
-    root_block_device {
-    volume_size = var.boot_disk_size
-  }
-}
