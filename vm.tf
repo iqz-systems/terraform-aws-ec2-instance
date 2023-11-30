@@ -1,66 +1,94 @@
 resource "aws_eip" "instance_ip" {
-  instance = aws_instance.ec2_instance.id
+  count    = var.create && var.create_public_eip ? var.instance_count : 0
+  instance = aws_instance.ec2_instance[count.index].id
+  tags = {
+    Name = local.eip_name
+  }
+}
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
 
   tags = {
-    Name = var.eip_name_value
+    Name = local.vpc_name
+  }
+}
+
+resource "aws_internet_gateway" "example" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = local.ig_name
+  }
+}
+
+resource "aws_subnet" "main" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = var.availability_zone != null ? var.availability_zone : ""
+
+  tags = {
+    Name = local.subnet_name
+  }
+}
+
+resource "aws_security_group" "instance_sg" {
+  name        = "instance-security-group"
+  description = "Security group for EC2 instance"
+  vpc_id      = aws_vpc.main.id
+
+  provisioner "local-exec" {
+    command = "curl ifconfig.me > ip.txt"
+  }
+
+  ingress {
+    from_port   = local.ssh_port
+    to_port     = local.ssh_port
+    protocol    = local.tcp_protocol
+    cidr_blocks = local.my_ips
+  }
+
+   ingress {
+    from_port   = local.http_port
+    to_port     = local.http_port
+    protocol    = local.tcp_protocol
+    cidr_blocks = local.all_ips
+  }
+
+  ingress {
+    from_port   = local.https_port
+    to_port     = local.https_port
+    protocol    = local.tcp_protocol
+    cidr_blocks = local.all_ips
+  }
+
+  egress {
+    from_port   = local.all_ports
+    to_port     = local.all_ports
+    protocol    = local.any_protocol
+    cidr_blocks = local.all_ips
+  }
+
+  tags = {
+    Name = local.sg_name
   }
 }
 
 resource "aws_instance" "ec2_instance" {
-  ami                    = var.instance_ami_id
-  instance_type          = var.machine_type
-  key_name               = var.key_name
-  subnet_id              = var.subnet_id
+  count                  = var.create ? local.instance_count : 0
+  ami                    = local.ami_id
+  instance_type          = local.machine_type
+  key_name               = local.key_name
   availability_zone      = var.availability_zone
-
-  vpc_security_group_ids = var.security_groups
-
-   tags = {
-    Name = var.instance_name_value
+  subnet_id              = aws_subnet.main.id
+  vpc_security_group_ids = [aws_security_group.instance_sg.id]
+  tags = {
+    Name = "${var.name}-${count.index + 1}"
   }
 
-  root_block_device {
-    volume_size = var.boot_disk_size
+    root_block_device {
+    volume_size = local.disk_size
   }
-
-  metadata_options {
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-  }
-
-  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
-
-  user_data = <<-EOF
-    #cloud-config
-    enable_oslogin: true
-    EOF
-
 }
-
-resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "ec2_instance_profile"
-  role = aws_iam_role.ec2_instance_role.name
-}
-
-resource "aws_iam_role" "ec2_instance_role" {
-  name = "ec2_instance_role"
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17",
-    Statement = [
-      {
-        Action    = "sts:AssumeRole",
-        Effect    = "Allow",
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_security_group" "ec2_security_group" {
-  vpc_id      = var.vpc_id
-  tags        = var.security_group_tags
-}
-
