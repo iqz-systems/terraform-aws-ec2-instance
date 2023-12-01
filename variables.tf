@@ -42,8 +42,8 @@ variable "user_data_base64" {
 
 variable "tags" {
   description = "tags for resources in AWS"
-  type        = string
-  default     = null
+  type        = map(any)
+  default     = {}
 }
 
 variable "vpc_id" {
@@ -121,8 +121,8 @@ variable "volume_type" {
 
 variable "volume_size" {
   description = "Size of the volume in gibibytes (GiB)"
-  type        = string
-  default     = "20"
+  type        = number
+  default     = 20
 }
 
 variable "aws_iam_role" {
