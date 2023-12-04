@@ -20,7 +20,7 @@ module "ec2" {
   subnet_id         = "my-subnet"
   ami_id_owner      = "aws-marketplace"
   ami_name          = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" # instead of ami_name. you can pass ami_id also
-  instance_type     = 't3.micro"
+  instance_type     = "t3.micro"
   volume_size       = 20
   volume_type       = "gp3"
   key_pair          = "my-keypair" 
