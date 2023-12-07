@@ -35,7 +35,7 @@ module "ec2" {
   }]
 
   tags = {
-    app = demo
+    app = "demo"
   }
 }
 ```
