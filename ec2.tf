@@ -1,6 +1,6 @@
 resource "aws_eip" "instance_ip" {
   count    = var.create_public_eip ? 1 : 0
-  instance = aws_instance.ec2_instance
+  instance = aws_instance.ec2_instance.id
   tags = {
     Name = format("%s-%s-%s", var.app_name, var.environment, "EIP")
   }
@@ -44,7 +44,7 @@ module "sg" {
 
 
 resource "aws_instance" "ec2_instance" {
-  ami                     = var.ami_id > 0 ? var.ami_id : data.aws_ami.ami.id
+  ami                     = length(var.ami_id) > 0 ? var.ami_id : data.aws_ami.ami.id
   key_name                = var.key_pair
   availability_zone       = var.availability_zone
   subnet_id               = var.subnet_id
@@ -54,7 +54,7 @@ resource "aws_instance" "ec2_instance" {
   disable_api_termination = var.disable_api_termination
   instance_type           = var.instance_type
   tags = merge({
-    Name = var.instance_name > 0 ? var.instance_name : format("%s-%s-%s", var.app_name, var.environment, "vm")
+    Name = lenght(var.instance_name) > 0 ? var.instance_name : format("%s-%s-%s", var.app_name, var.environment, "vm")
   }, var.tags)
 
     root_block_device {
