@@ -16,8 +16,8 @@ module "ec2" {
   environment       = "dev"
   create_public_eip = true
   availability_zone = "us-east-1a"
-  vpc_id            = "my-vpc"
-  subnet_id         = "my-subnet"
+  vpc_id            = "vpc-124"
+  subnet_id         = "subnet-10845"   # add subnet according to the availability zone
   ami_id_owner      = ["aws-marketplace"]
   ami_name          = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" # instead of ami_name. you can pass ami_id also
   instance_type     = "t3.micro"
