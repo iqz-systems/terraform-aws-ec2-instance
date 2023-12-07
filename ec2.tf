@@ -19,7 +19,7 @@ data "aws_ami" "ami" {
     values = ["hvm"]
   }
 
-  owners = var.ami_id_owner 
+  owners = var.ami_id_owner
 }
 
 module "sg" {
@@ -54,7 +54,7 @@ resource "aws_instance" "ec2_instance" {
   disable_api_termination = var.disable_api_termination
   instance_type           = var.instance_type
   tags = merge({
-    Name = lenght(var.instance_name) > 0 ? var.instance_name : format("%s-%s-%s", var.app_name, var.environment, "vm")
+    Name = length(var.instance_name) > 0 ? var.instance_name : format("%s-%s-%s", var.app_name, var.environment, "vm")
   }, var.tags)
 
     root_block_device {
