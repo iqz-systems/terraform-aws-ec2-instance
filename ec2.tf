@@ -57,10 +57,10 @@ resource "aws_instance" "ec2_instance" {
     Name = length(var.instance_name) > 0 ? var.instance_name : format("%s-%s-%s", var.app_name, var.environment, "vm")
   }, var.tags)
 
-    root_block_device {
-    volume_size = var.volume_size
-    volume_type = var.volume_type
+  root_block_device {
+    volume_size           = var.volume_size
+    volume_type           = var.volume_type
     delete_on_termination = var.delete_volume_on_termination
-    encrypted = var.volume_encryption
+    encrypted             = var.volume_encryption
   }
 }
